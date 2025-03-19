@@ -11,6 +11,7 @@ import { UserRole } from './user-role.entity';
 import { User } from './user.entity';
 import { Permission } from './permission.entity';
 import { RolePermission } from './role-permission.entity';
+import { UserSession } from './user-session.entity';
 
 export const entities = [
   Country,
@@ -26,4 +27,5 @@ export const entities = [
   User,
   Permission,
   RolePermission,
+  UserSession,
 ];

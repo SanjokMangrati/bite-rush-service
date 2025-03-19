@@ -12,6 +12,7 @@ import { Order } from './order.entity';
 import { PaymentMethod } from './payment-method.entity';
 import { UserCountry } from './user-country.entity';
 import { UserRole } from './user-role.entity';
+import { UserSession } from './user-session.entity';
 
 @Entity({ name: 'users' })
 @Unique(['email'])
@@ -48,4 +49,7 @@ export class User {
 
   @OneToMany(() => UserCountry, (userCountry) => userCountry.user)
   userCountries: UserCountry[];
+
+  @OneToMany(() => UserSession, (session) => session.user)
+  sessions: UserSession[];
 }
