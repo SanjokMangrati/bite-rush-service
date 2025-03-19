@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { entities } from './data/entities';
+import * as migrations from './data/migrations';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { entities } from './data/entities';
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         entities: entities,
-        migrations: ['src/data/migrations/*.js'],
+        migrations: migrations,
         migrationsTableName: 'migrations_history',
         synchronize: false,
       }),
