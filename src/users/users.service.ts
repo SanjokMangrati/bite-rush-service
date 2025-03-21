@@ -9,10 +9,11 @@ import * as bcrypt from 'bcrypt';
 import { EntityManager, Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Country } from 'src/data/entities/country.entity';
-import { Role, RoleType } from 'src/data/entities/role.entity';
+import { Role } from 'src/data/entities/role.entity';
 import { UserCountry } from 'src/data/entities/user-country.entity';
 import { UserRole } from 'src/data/entities/user-role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { PermissionEnum } from 'src/data/entities/permission.entity';
 
 @Injectable()
 export class UsersService {
@@ -40,6 +41,8 @@ export class UsersService {
         'userRoles.role',
         'userCountries',
         'userCountries.country',
+        'userRoles.role.rolePermissions',
+        'userRoles.role.rolePermissions.permission',
       ],
     });
     if (!user) {
@@ -114,5 +117,24 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
     return this.findById(id);
+  }
+
+  async hasPermission(
+    userId: string,
+    permission: PermissionEnum,
+  ): Promise<boolean> {
+    const user = await this.findById(userId);
+    if (!user || !user.userRoles || user.userRoles.length === 0) {
+      return false;
+    }
+    for (const userRole of user.userRoles) {
+      const rolePermissions = userRole.role.rolePermissions || [];
+      for (const rolePermission of rolePermissions) {
+        if (rolePermission.permission.name === permission) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

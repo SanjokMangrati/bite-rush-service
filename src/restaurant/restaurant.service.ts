@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { Restaurant } from 'src/data/entities/restaurant.entity';
 import { UserJwtPayload } from 'lib/types/user.types';
 import { RoleType } from 'src/data/entities/role.entity';
+import { PermissionEnum } from 'src/data/entities/permission.entity';
 
 @Injectable()
 export class RestaurantsService {
@@ -15,6 +20,16 @@ export class RestaurantsService {
   ) {}
 
   async findAll(user: UserJwtPayload): Promise<Restaurant[]> {
+    const canView = await this.usersService.hasPermission(
+      user.sub,
+      PermissionEnum.VIEW_RESTAURANTS,
+    );
+    if (!canView) {
+      throw new UnauthorizedException(
+        'You do not have permission to view restaurants.',
+      );
+    }
+
     if (user.roles.includes(RoleType.ADMIN)) {
       return this.restaurantRepository.find({ relations: ['country'] });
     } else {
@@ -35,6 +50,16 @@ export class RestaurantsService {
   }
 
   async findOne(id: string, user: UserJwtPayload): Promise<Restaurant> {
+    const canView = await this.usersService.hasPermission(
+      user.sub,
+      PermissionEnum.VIEW_RESTAURANTS,
+    );
+    if (!canView) {
+      throw new UnauthorizedException(
+        'You do not have permission to view restaurants.',
+      );
+    }
+
     const restaurant = await this.restaurantRepository.findOne({
       where: { id },
       relations: ['country', 'menuCategories', 'menuCategories.menuItems'],

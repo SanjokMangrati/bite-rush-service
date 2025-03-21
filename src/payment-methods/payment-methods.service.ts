@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentMethod } from 'src/data/entities/payment-method.entity';
 import { RoleType } from 'src/data/entities/role.entity';
 import { decrypt, encrypt } from 'lib/helper';
+import { PermissionEnum } from 'src/data/entities/permission.entity';
 
 @Injectable()
 export class PaymentMethodsService {
@@ -97,9 +98,13 @@ export class PaymentMethodsService {
     updateDto: UpdatePaymentMethodDto,
     userPayload: UserJwtPayload,
   ): Promise<PaymentMethod> {
-    if (!userPayload.roles.includes(RoleType.ADMIN)) {
+    const hasUpdatePermission = await this.usersService.hasPermission(
+      userPayload.sub,
+      PermissionEnum.UPDATE_PAYMENT,
+    );
+    if (!hasUpdatePermission) {
       throw new UnauthorizedException(
-        'Only admin users can update payment methods.',
+        'User does not have permission to update payment methods.',
       );
     }
     const paymentMethod = await this.paymentMethodRepository.findOne({

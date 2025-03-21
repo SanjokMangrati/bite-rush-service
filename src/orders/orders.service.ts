@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MenuItem } from 'src/data/entities/menu-item.entity';
@@ -14,7 +14,7 @@ import { AddOrderItemDto } from './dto/add-order-item.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { AddItemToCartDto } from './dto/add-item-to-cart.dto';
 import { UserJwtPayload } from 'lib/types/user.types';
-import { RoleType } from 'src/data/entities/role.entity';
+import { PermissionEnum } from 'src/data/entities/permission.entity';
 
 @Injectable()
 export class OrdersService {
@@ -32,6 +32,16 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     userPayload: UserJwtPayload,
   ): Promise<Order> {
+    const canCreateOrder = await this.usersService.hasPermission(
+      userPayload.sub,
+      PermissionEnum.CREATE_ORDER,
+    );
+    if (!canCreateOrder) {
+      throw new UnauthorizedException(
+        'User does not have permission to create orders.',
+      );
+    }
+
     const user = await this.usersService.findById(userPayload.sub);
     if (!user || !user.userCountries || user.userCountries.length === 0) {
       throw new NotFoundException('User country not found');
@@ -63,31 +73,56 @@ export class OrdersService {
         'Cannot modify order that is not in CART status',
       );
     }
+
     const menuItem = await this.menuItemRepository.findOne({
       where: { id: addOrderItemDto.menuItemId },
     });
     if (!menuItem) {
       throw new NotFoundException('Menu item not found');
     }
-
     const priceAtOrder = Number(menuItem.price);
-    const orderItem = this.orderItemRepository.create({
-      order: { id: orderId },
-      menuItem: { id: menuItem.id },
-      quantity: addOrderItemDto.quantity,
-      price_at_order: priceAtOrder,
-    });
-    order.total_amount =
-      Number(order.total_amount) + priceAtOrder * addOrderItemDto.quantity;
-    await this.orderRepository.save(order);
 
-    return this.orderItemRepository.save(orderItem);
+    let orderItem = await this.orderItemRepository.findOne({
+      where: {
+        order: { id: orderId },
+        menuItem: { id: addOrderItemDto.menuItemId },
+      },
+    });
+
+    if (orderItem) {
+      orderItem.quantity += addOrderItemDto.quantity;
+      order.total_amount =
+        Number(order.total_amount) + priceAtOrder * addOrderItemDto.quantity;
+      await this.orderRepository.save(order);
+      return await this.orderItemRepository.save(orderItem);
+    } else {
+      orderItem = this.orderItemRepository.create({
+        order: { id: orderId } as any,
+        menuItem: { id: menuItem.id } as any,
+        quantity: addOrderItemDto.quantity,
+        price_at_order: priceAtOrder,
+      });
+      order.total_amount =
+        Number(order.total_amount) + priceAtOrder * addOrderItemDto.quantity;
+      await this.orderRepository.save(order);
+      return await this.orderItemRepository.save(orderItem);
+    }
   }
 
   async addItemToCart(
     addItemToCartDto: AddItemToCartDto,
     userPayload: UserJwtPayload,
   ): Promise<{ order: Order; orderItem: OrderItem }> {
+    const canCreateOrder = await this.usersService.hasPermission(
+      userPayload.sub,
+      PermissionEnum.CREATE_ORDER,
+    );
+    if (!canCreateOrder) {
+      throw new UnauthorizedException(
+        'User does not have permission to create orders.',
+      );
+    }
+
     let order = await this.orderRepository.findOne({
       where: {
         user: { id: userPayload.sub },
@@ -116,12 +151,13 @@ export class OrdersService {
     orderId: string,
     userPayload: UserJwtPayload,
   ): Promise<Order> {
-    if (
-      !userPayload.roles.includes(RoleType.ADMIN) &&
-      !userPayload.roles.includes(RoleType.MANAGER)
-    ) {
+    const canPlaceOrder = await this.usersService.hasPermission(
+      userPayload.sub,
+      PermissionEnum.PLACE_ORDER,
+    );
+    if (!canPlaceOrder) {
       throw new UnauthorizedException(
-        'You are not allowed to checkout orders.',
+        'User does not have permission to place orders.',
       );
     }
     return await this.orderRepository.manager.transaction(
@@ -143,11 +179,14 @@ export class OrdersService {
     orderId: string,
     userPayload: UserJwtPayload,
   ): Promise<Order> {
-    if (
-      !userPayload.roles.includes(RoleType.ADMIN) &&
-      !userPayload.roles.includes(RoleType.MANAGER)
-    ) {
-      throw new UnauthorizedException('You are not allowed to cancel orders.');
+    const canCancel = await this.usersService.hasPermission(
+      userPayload.sub,
+      PermissionEnum.CANCEL_ORDER,
+    );
+    if (!canCancel) {
+      throw new UnauthorizedException(
+        'User does not have permission to cancel orders.',
+      );
     }
     return await this.orderRepository.manager.transaction(
       async (manager: EntityManager) => {
