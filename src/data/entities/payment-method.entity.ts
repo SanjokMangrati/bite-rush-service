@@ -28,7 +28,7 @@ export class PaymentMethod {
 
   @Column({ name: 'card_number', type: 'varchar', length: 255 })
   @IsString()
-  card_number: string; // Encrypted
+  card_number: string; //Encrypted
 
   @Column({ name: 'cardholder_name', type: 'varchar', length: 255 })
   @IsString()
@@ -38,9 +38,9 @@ export class PaymentMethod {
   @IsString()
   expiry_date: string;
 
-  @Column({ name: 'cvv', type: 'smallint' })
-  @IsNumber()
-  cvv: number;
+  @Column({ name: 'cvv', type: 'varchar', length: 255 })
+  @IsString()
+  cvv: string; //Encrypted
 
   @Column({ name: 'is_default', type: 'boolean', default: false })
   @IsBoolean()
