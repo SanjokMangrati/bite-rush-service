@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { IsString } from 'class-validator';
 import { MenuItem } from './menu-item.entity';
@@ -17,6 +18,7 @@ export class MenuCategory {
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.menuCategories, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'restaurant_id' })
   restaurant: Restaurant;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })

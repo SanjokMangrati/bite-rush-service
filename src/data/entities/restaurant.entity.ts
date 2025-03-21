@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { IsString, IsUrl } from 'class-validator';
 import { Country } from './country.entity';
@@ -36,6 +37,7 @@ export class Restaurant {
   @ManyToOne(() => Country, (country) => country.restaurants, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'country_id' })
   country: Country;
 
   @OneToMany(() => MenuCategory, (menuCategory) => menuCategory.restaurant)

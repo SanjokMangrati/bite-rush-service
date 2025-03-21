@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
 import { User } from './user.entity';
 
@@ -12,6 +18,7 @@ export class PaymentMethod {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id: string;
 
+  @JoinColumn({ name: 'user_id' })
   @ManyToOne(() => User, (user) => user.paymentMethods, { onDelete: 'CASCADE' })
   user: User;
 

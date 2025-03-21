@@ -19,22 +19,13 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
-
-    @InjectRepository(UserRole)
-    private readonly userRoleRepository: Repository<UserRole>,
-
-    @InjectRepository(Country)
-    private readonly countryRepository: Repository<Country>,
-
-    @InjectRepository(UserCountry)
-    private readonly userCountryRepository: Repository<UserCountry>,
   ) {}
 
   async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['userRoles', 'userRoles.role'],
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -42,7 +33,15 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: [
+        'userRoles',
+        'userRoles.role',
+        'userCountries',
+        'userCountries.country',
+      ],
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }

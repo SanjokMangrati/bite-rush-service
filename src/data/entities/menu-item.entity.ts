@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { IsBoolean, IsNumber, IsString, IsUrl } from 'class-validator';
 import { MenuCategory } from './menu-categories.entity';
 
@@ -10,6 +16,7 @@ export class MenuItem {
   @ManyToOne(() => MenuCategory, (category) => category.menuItems, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'category_id' })
   category: MenuCategory;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })

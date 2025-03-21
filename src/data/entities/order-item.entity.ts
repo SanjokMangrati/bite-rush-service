@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { IsNumber } from 'class-validator';
 import { MenuItem } from './menu-item.entity';
 import { Order } from './order.entity';
@@ -8,9 +14,11 @@ export class OrderItem {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id: string;
 
+  @JoinColumn({ name: 'order_id' })
   @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
   order: Order;
 
+  @JoinColumn({ name: 'menu_item_id' })
   @ManyToOne(() => MenuItem, { onDelete: 'CASCADE' })
   menuItem: MenuItem;
 

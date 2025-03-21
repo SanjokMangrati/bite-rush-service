@@ -7,7 +7,12 @@ import {
   Req,
   Post,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
@@ -27,6 +32,7 @@ export class UsersController {
     status: 200,
     description: 'User profile retrieved successfully',
   })
+  @ApiBearerAuth()
   async getProfile(@Req() req: Request) {
     const user = req['user'];
     return this.usersService.findById(user.sub);
@@ -39,6 +45,7 @@ export class UsersController {
     status: 200,
     description: 'User profile updated successfully',
   })
+  @ApiBearerAuth()
   async updateProfile(
     @Req() req: Request,
     @Body() updateUserDto: UpdateUserDto,
@@ -54,6 +61,7 @@ export class UsersController {
     status: 200,
     description: 'List of users retrieved successfully',
   })
+  @ApiBearerAuth()
   async getAllUsers() {
     return this.usersService.findAll();
   }

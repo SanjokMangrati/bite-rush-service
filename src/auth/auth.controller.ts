@@ -1,5 +1,10 @@
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Request } from 'express';
 import { LoginDto } from './dto/login.dto';
@@ -34,6 +39,7 @@ export class AuthController {
   @Post('logout')
   @ApiOperation({ summary: 'Logout and invalidate refresh token' })
   @ApiResponse({ status: 200, description: 'User logged out successfully' })
+  @ApiBearerAuth()
   async logout(@Req() req: Request) {
     const user = req['user'];
     return this.authService.logout(user.sub);

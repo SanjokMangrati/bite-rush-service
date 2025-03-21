@@ -7,6 +7,8 @@ import { entities } from './data/entities';
 import * as migrations from './data/migrations';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { RestaurantsModule } from './restaurant/restaurant.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UsersModule } from './users/users.module';
     }),
     AuthModule,
     UsersModule,
+    RestaurantsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

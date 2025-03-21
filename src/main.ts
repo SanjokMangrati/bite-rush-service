@@ -9,6 +9,7 @@ async function bootstrap() {
     .setTitle('BiteRush API Documentation')
     .setDescription('API documentation for BiteRush application')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
