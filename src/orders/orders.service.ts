@@ -112,7 +112,7 @@ export class OrdersService {
   async addItemToCart(
     addItemToCartDto: AddItemToCartDto,
     userPayload: UserJwtPayload,
-  ): Promise<{ order: Order; orderItem: OrderItem }> {
+  ): Promise<Order> {
     const canCreateOrder = await this.usersService.hasPermission(
       userPayload.sub,
       PermissionEnum.CREATE_ORDER,
@@ -143,8 +143,8 @@ export class OrdersService {
       quantity: addItemToCartDto.quantity,
     };
 
-    const orderItem = await this.addOrderItem(order.id, addOrderItemDto);
-    return { order, orderItem };
+    await this.addOrderItem(order.id, addOrderItemDto);
+    return await this.getOrderById(order.id);
   }
 
   async checkoutOrder(
@@ -209,11 +209,115 @@ export class OrdersService {
   async getOrderById(orderId: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['orderItems', 'orderItems.menuItem'],
+      relations: ['orderItems', 'orderItems.menuItem', 'restaurant'],
     });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
     return order;
+  }
+
+  async decreaseOrderItem(
+    orderId: string,
+    menuItemId: string,
+    decreaseBy: number,
+  ): Promise<Order | null> {
+    return await this.orderRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const order = await manager.findOne(Order, {
+          where: { id: orderId },
+          relations: ['orderItems', 'orderItems.menuItem'],
+        });
+        if (!order) {
+          throw new NotFoundException('Order not found');
+        }
+        if (order.status !== OrderStatus.CART) {
+          throw new BadRequestException(
+            'Cannot modify order that is not in CART status',
+          );
+        }
+        const orderItem = order.orderItems.find(
+          (item) => item.menuItem.id === menuItemId,
+        );
+        if (!orderItem) {
+          throw new NotFoundException('Order item not found');
+        }
+        const menuItem = await this.menuItemRepository.findOne({
+          where: { id: menuItemId },
+        });
+        if (!menuItem) {
+          throw new NotFoundException('Menu item not found');
+        }
+        const priceAtOrder = Number(menuItem.price);
+
+        orderItem.quantity -= decreaseBy;
+        if (orderItem.quantity <= 0) {
+          await manager.remove(OrderItem, orderItem);
+          order.total_amount =
+            Number(order.total_amount) -
+            priceAtOrder * (orderItem.quantity + decreaseBy);
+        } else {
+          await manager.save(orderItem);
+          order.total_amount =
+            Number(order.total_amount) - priceAtOrder * decreaseBy;
+        }
+        const remainingItems = await manager.find(OrderItem, {
+          where: { order: { id: orderId } },
+        });
+        if (remainingItems.length === 0) {
+          await manager.remove(Order, order);
+          return null;
+        }
+        return await manager.save(order);
+      },
+    );
+  }
+
+  async deleteOrderItem(
+    orderId: string,
+    menuItemId: string,
+  ): Promise<Order | null> {
+    return await this.orderRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const order = await manager.findOne(Order, {
+          where: { id: orderId },
+          relations: ['orderItems', 'orderItems.menuItem'],
+        });
+        if (!order) {
+          throw new NotFoundException('Order not found');
+        }
+        if (order.status !== OrderStatus.CART) {
+          throw new BadRequestException(
+            'Cannot modify order that is not in CART status',
+          );
+        }
+        const orderItem = order.orderItems.find(
+          (item) => item.menuItem.id === menuItemId,
+        );
+        if (!orderItem) {
+          throw new NotFoundException('Order item not found');
+        }
+        const menuItem = await this.menuItemRepository.findOne({
+          where: { id: menuItemId },
+        });
+        if (!menuItem) {
+          throw new NotFoundException('Menu item not found');
+        }
+        const priceAtOrder = Number(menuItem.price);
+
+        await manager.remove(OrderItem, orderItem);
+        order.total_amount =
+          Number(order.total_amount) - priceAtOrder * orderItem.quantity;
+
+        const remainingItems = await manager.find(OrderItem, {
+          where: { order: { id: orderId } },
+        });
+        if (remainingItems.length === 0) {
+          await manager.remove(Order, order);
+          return null;
+        }
+        return await manager.save(order);
+      },
+    );
   }
 }

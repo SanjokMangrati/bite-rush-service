@@ -1,9 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
+import * as compression from 'compression';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'verbose'],
+    cors: true,
+  });
+
+  app.use(helmet());
+  app.use(compression());
+
+  app.use(json());
+  app.use(urlencoded({ extended: true }));
 
   const config = new DocumentBuilder()
     .setTitle('BiteRush API Documentation')

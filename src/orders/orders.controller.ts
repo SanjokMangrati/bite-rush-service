@@ -7,6 +7,7 @@ import {
   Body,
   UseGuards,
   Req,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -69,7 +70,7 @@ export class OrdersController {
   async addItemToCart(
     @Body() addItemToCartDto: AddItemToCartDto,
     @Req() req: Request,
-  ): Promise<{ order: Order; orderItem: OrderItem }> {
+  ): Promise<Order> {
     return this.ordersService.addItemToCart(addItemToCartDto, req['user']);
   }
 
@@ -91,6 +92,31 @@ export class OrdersController {
     @Req() req: Request,
   ): Promise<Order> {
     return this.ordersService.cancelOrder(orderId, req['user']);
+  }
+
+  @Patch(':orderId/items/:menuItemId/decrease')
+  @ApiOperation({ summary: 'Decrease quantity of an order item' })
+  @ApiResponse({ status: 200, description: 'Order updated', type: Order })
+  async decreaseOrderItem(
+    @Param('orderId') orderId: string,
+    @Param('menuItemId') menuItemId: string,
+    @Body('decreaseBy') decreaseBy: number,
+  ): Promise<Order | null> {
+    return this.ordersService.decreaseOrderItem(
+      orderId,
+      menuItemId,
+      decreaseBy,
+    );
+  }
+
+  @Delete(':orderId/items/:menuItemId')
+  @ApiOperation({ summary: 'Remove an order item completely' })
+  @ApiResponse({ status: 200, description: 'Order updated', type: Order })
+  async deleteOrderItem(
+    @Param('orderId') orderId: string,
+    @Param('menuItemId') menuItemId: string,
+  ): Promise<Order | null> {
+    return this.ordersService.deleteOrderItem(orderId, menuItemId);
   }
 
   @Get(':orderId')
