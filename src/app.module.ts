@@ -24,6 +24,10 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
         migrations: migrations,
         migrationsTableName: 'migrations_history',
         synchronize: false,
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: false }
+            : undefined,
       }),
     }),
     AuthModule,
