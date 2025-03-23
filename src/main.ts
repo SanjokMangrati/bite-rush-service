@@ -8,7 +8,11 @@ import { json, urlencoded } from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'verbose'],
-    cors: true,
+  });
+
+  app.enableCors({
+    origin: ['https://bite-rush-client.vercel.app'],
+    credentials: true,
   });
 
   app.use(helmet());
