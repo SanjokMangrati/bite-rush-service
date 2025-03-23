@@ -11,7 +11,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['https://bite-rush-client.vercel.app'],
+    origin: ['https://bite-rush-client.vercel.app', 'http://localhost:3000'],
     credentials: true,
   });
 
